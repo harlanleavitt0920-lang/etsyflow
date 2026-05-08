@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EtsyFlow — ForwardMadeStudio AI Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d0d0d;font-family:'DM Mono',monospace;display:flex;height:100vh;overflow:hidden;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+
+/* SIDEBAR */
+#sidebar{width:230px;min-width:230px;background:rgba(255,255,255,0.02);border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;overflow:hidden;}
+#logo{padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06);}
+#logo-title{color:#fff;font-size:13px;font-weight:700;letter-spacing:0.5px;}
+#logo-sub{color:#333;font-size:9px;letter-spacing:1.5px;margin-top:1px;}
+#status{padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:8px;}
+#status-dot{width:5px;height:5px;border-radius:50%;background:#06D6A0;animation:pulse 2s infinite;}
+#status-text{color:#06D6A0;font-size:9px;letter-spacing:1px;}
+#nav{flex:1;padding:12px 8px;overflow-y:auto;}
+.nav-group-label{color:#282828;font-size:9px;letter-spacing:1.5px;padding:10px 8px 5px;}
+.nav-btn{background:transparent;border:1px solid transparent;border-radius:8px;padding:8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;width:100%;margin-bottom:2px;transition:all 0.1s;}
+.nav-btn:hover{background:rgba(255,255,255,0.04);}
+.nav-btn.active{border-color:rgba(255,255,255,0.2);}
+.nav-icon{font-size:14px;flex-shrink:0;}
+.nav-label{color:#555;font-size:11px;font-family:'DM Mono',monospace;text-align:left;}
+.nav-btn.active .nav-label{color:#fff;font-weight:700;}
+.nav-badge{margin-left:auto;font-size:8px;padding:1px 5px;border-radius:6px;font-weight:700;}
+.badge-start{background:#00F5FF;color:#0d0d0d;}
+.badge-new{background:#F72585;color:#fff;}
+#collapse-btn{margin:0 8px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:7px;padding:7px;cursor:pointer;color:#444;font-size:11px;font-family:'DM Mono',monospace;}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#topbar{padding:13px 26px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.01);}
+#topbar-left{display:flex;align-items:center;gap:9px;}
+#current-icon{font-size:14px;}
+#current-label{color:#444;font-size:10px;letter-spacing:1px;}
+#topbar-right{display:flex;gap:14px;align-items:center;}
+#goal-text{color:#333;font-size:10px;}
+#goal-highlight{color:#FFD166;}
+#live-badge{background:rgba(6,214,160,0.08);border:1px solid rgba(6,214,160,0.2);border-radius:20px;padding:3px 12px;color:#06D6A0;font-size:9px;letter-spacing:0.5px;}
+#content{flex:1;overflow-y:auto;padding:28px 32px;animation:fadeUp 0.25s ease;}
+#content-inner{max-width:820px;}
+#footer{padding:8px 26px;border-top:1px solid rgba(255,255,255,0.04);display:flex;gap:18px;overflow-x:auto;}
+.footer-step{color:#252525;font-size:10px;white-space:nowrap;}
+
+/* PANELS */
+.panel{display:none;}
+.panel.active{display:block;}
+.panel-title{font-family:'DM Serif Display',serif;font-size:22px;color:#fff;margin:0 0 8px 0;font-weight:400;}
+.panel-desc{font-size:13px;color:#888;margin:0 0 20px 0;line-height:1.6;}
+.input-row{display:flex;gap:10px;flex-wrap:wrap;}
+.ai-input{flex:1;min-width:200px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:11px 15px;color:#fff;font-family:'DM Mono',monospace;font-size:13px;outline:none;}
+.ai-input:focus{border-color:rgba(244,162,97,0.45);}
+.ai-btn{padding:11px 20px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;white-space:nowrap;}
+.result-box{margin-top:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px;font-size:13px;line-height:1.8;color:#e0e0e0;min-height:80px;white-space:pre-wrap;display:none;}
+.result-box.visible{display:block;}
+.loading{display:flex;align-items:center;gap:12px;color:#F4A261;}
+.spinner{animation:spin 1s linear infinite;display:inline-block;}
+.chip-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.chip{padding:6px 14px;border-radius:20px;cursor:pointer;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#aaa;font-family:'DM Mono',monospace;font-size:12px;}
+.chip.active{font-weight:700;color:#0d0d0d;}
+.stat-grid{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.stat-card{border-radius:12px;padding:14px 18px;flex:1;min-width:100px;}
+.stat-label{font-size:10px;letter-spacing:1px;margin-bottom:5px;}
+.stat-value{font-family:'DM Serif Display',serif;font-size:20px;}
+.stat-sub{font-size:11px;margin-top:3px;color:#555;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.form-label{color:#777;font-size:10px;letter-spacing:0.8px;margin-bottom:5px;display:block;}
+.seq-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:11px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:7px;}
+.seq-btn.active{background:rgba(247,37,133,0.1);}
+.seq-name{color:#888;font-family:'DM Mono',monospace;font-size:13px;text-align:left;}
+.seq-btn.active .seq-name{color:#fff;font-weight:700;}
+.seq-desc{color:#444;font-family:'DM Mono',monospace;font-size:11px;}
+.card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;}
+.month-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:16px;}
+.month-btn{padding:10px 6px;border-radius:10px;cursor:pointer;text-align:center;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02);}
+.month-btn.active{border-color:#FF9A3C;background:rgba(255,154,60,0.14);}
+.month-emoji{font-size:18px;margin-bottom:3px;}
+.month-name{font-size:10px;color:#555;}
+.month-btn.active .month-name{color:#FF9A3C;font-weight:700;}
+.checklist-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:9px;cursor:pointer;margin-bottom:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);}
+.checklist-item.checked{background:rgba(6,214,160,0.05);border-color:rgba(6,214,160,0.2);}
+.check-box{width:18px;height:18px;border-radius:4px;border:2px solid rgba(255,255,255,0.2);background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#0d0d0d;font-weight:700;}
+.checklist-item.checked .check-box{background:#06D6A0;border-color:#06D6A0;}
+.check-text{flex:1;color:#ccc;font-size:12px;line-height:1.5;}
+.checklist-item.checked .check-text{color:#555;text-decoration:line-through;}
+.check-cost{color:#444;font-size:10px;white-space:nowrap;}
+.check-link{color:#4CC9F0;font-size:10px;text-decoration:none;white-space:nowrap;}
+.progress-bar-wrap{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.progress-bar{height:100%;border-radius:3px;transition:width 0.4s ease;}
+.group-label{color:#777;font-size:11px;letter-spacing:1px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.roadmap-item{display:flex;gap:14px;align-items:flex-start;background:rgba(255,255,255,0.02);border-radius:9px;padding:14px 16px;margin-bottom:10px;}
+.roadmap-badge{border-radius:5px;padding:3px 7px;font-size:10px;font-weight:700;text-align:center;color:#0d0d0d;min-width:56px;}
+.roadmap-week{color:#fff;font-size:12px;font-weight:700;margin-bottom:5px;}
+.roadmap-goal{font-family:'DM Serif Display',serif;font-size:14px;}
+.roadmap-action{color:#888;font-size:12px;line-height:1.5;margin-top:4px;}
+textarea.ai-input{height:100px;resize:vertical;flex:none;width:100%;}
+.fullw{flex:none;width:100%;}
+.mb12{margin-bottom:12px;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{padding:7px 10px;text-align:left;color:#555;font-weight:400;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.1);}
+td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.tbl-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-family:'DM Mono',monospace;font-size:12px;width:65px;padding:4px 8px;outline:none;}
+.tbl-name{background:transparent;border:none;color:#fff;font-family:'DM Mono',monospace;font-size:12px;width:130px;outline:none;}
+.btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div id="logo">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#F4A261,#E76F51);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">◈</div>
+      <div>
+        <div id="logo-title">ETSYFLOW</div>
+        <div id="logo-sub">AI AUTOMATION v3</div>
+      </div>
+    </div>
+  </div>
+  <div id="status">
+    <div id="status-dot"></div>
+    <span id="status-text">CLAUDE AI · 13 MODULES</span>
+  </div>
+  <div id="nav">
+    <div class="nav-group-label">START HERE</div>
+    <button class="nav-btn active" data-panel="launch" data-color="#00F5FF" onclick="switchPanel(this)">
+      <span class="nav-icon" style="color:#00F5FF;">⚡</span>
+      <span class="nav-label">Launch Checklist</span>
+      <span class="nav-badge badge-start">START</span>
+    </button>
+    <div class="nav-group-label">CORE TOOLS</div>
+    <button class="nav-btn" data-panel="sourcing" data-color="#F4A261" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">◈</span><span class="nav-label">Product Sourcing</span></button>
+    <button class="nav-btn" data-panel="listings" data-color="#2EC4B6" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">◉</span><span class="nav-label">Listing Generator</span></button>
+    <button class="nav-btn" data-panel="keywords" data-color="#4CC9F0" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">⌖</span><span class="nav-label">Keyword Research</span><span class="nav-badge badge-new">NEW</span></button>
+    <button class="nav-btn" data-panel="marketing" data-color="#E76F51" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">◆</span><span class="nav-label">Marketing Engine</span></button>
+    <button class="nav-btn" data-panel="email" data-color="#F72585" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">✉</span><span class="nav-label">Email Sequences</span><span class="nav-badge badge-new">NEW</span></button>
+    <button class="nav-btn" data-panel="fulfillment" data-color="#A8DADC" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">◎</span><span class="nav-label">Fulfillment Msgs</span></button>
+    <div class="nav-group-label">ANALYTICS</div>
+    <button class="nav-btn" data-panel="ads" data-color="#FF6B9D" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">◑</span><span class="nav-label">Ads Calculator</span></button>
+    <button class="nav-btn" data-panel="profit" data-color="#06D6A0" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">⬡</span><span class="nav-label">Profit Tracker</span></button>
+    <button class="nav-btn" data-panel="competitor" data-color="#BD93F9" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">◭</span><span class="nav-label">Competitor Analyzer</span></button>
+    <button class="nav-btn" data-panel="seasonal" data-color="#FF9A3C" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">❋</span><span class="nav-label">Seasonal Calendar</span><span class="nav-badge badge-new">NEW</span></button>
+    <div class="nav-group-label">GROWTH</div>
+    <button class="nav-btn" data-panel="scale" data-color="#FFD166" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">▲</span><span class="nav-label">Scale Advisor</span></button>
+    <button class="nav-btn" data-panel="roadmap" data-color="#C77DFF" onclick="switchPanel(this)"><span class="nav-icon" style="color:#555;">◐</span><span class="nav-label">$5K Roadmap</span></button>
+  </div>
+  <button id="collapse-btn" onclick="toggleSidebar()">← Collapse</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <div id="topbar-left">
+      <span id="current-icon">⚡</span>
+      <span id="current-label">LAUNCH CHECKLIST</span>
+    </div>
+    <div id="topbar-right">
+      <span id="goal-text">GOAL: <span id="goal-highlight">$5,000/WEEK</span></span>
+      <div id="live-badge">● LIVE</div>
+    </div>
+  </div>
+  <div id="content">
+    <div id="content-inner">
+
+      <!-- LAUNCH PANEL -->
+      <div class="panel active" id="panel-launch">
+        <h3 class="panel-title">⚡ Launch Checklist</h3>
+        <p class="panel-desc">Your complete step-by-step guide from zero to live. Check off tasks as you complete them.</p>
+        <div class="card mb12" style="display:flex;align-items:center;gap:20px;">
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+              <span style="color:#fff;font-size:13px;font-weight:700;">Launch Progress</span>
+              <span id="progress-text" style="font-size:13px;font-weight:700;">0/20 · 0%</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%;background:#FF6B9D;"></div></div>
+          </div>
+        </div>
+        <div id="checklist-container"></div>
+        <div class="card mt12" style="border-color:rgba(0,245,255,0.15);margin-top:16px;">
+          <div style="color:#00F5FF;font-size:12px;font-weight:700;margin-bottom:10px;">⚡ AI LAUNCH COACH</div>
+          <input class="ai-input fullw mb12" id="launch-situation" placeholder="Tell me your situation: tech skill level, time available, budget…">
+          <button class="ai-btn" style="background:#00F5FF;color:#0d0d0d;" onclick="runLaunch()">Get My Launch Plan →</button>
+        </div>
+        <div class="result-box" id="result-launch"></div>
+      </div>
+
+      <!-- SOURCING PANEL -->
+      <div class="panel" id="panel-sourcing">
+        <h3 class="panel-title">◈ AI Product Sourcing</h3>
+        <p class="panel-desc">Enter a niche → AI finds 8 high-margin, low-competition product opportunities.</p>
+        <div class="input-row">
+          <input class="ai-input" id="sourcing-niche" placeholder="e.g. boho home decor, dog lovers, cottagecore…" onkeydown="if(event.key==='Enter')runAI('sourcing')">
+          <button class="ai-btn" style="background:#F4A261;" onclick="runAI('sourcing')">Find Products →</button>
+        </div>
+        <div class="result-box" id="result-sourcing"></div>
+      </div>
+
+      <!-- LISTINGS PANEL -->
+      <div class="panel" id="panel-listings">
+        <h3 class="panel-title">◉ AI Listing Generator</h3>
+        <p class="panel-desc">Enter any product → fully SEO-optimized title, 13 tags, and converting description. Copy-paste ready.</p>
+        <div class="input-row">
+          <input class="ai-input" id="listings-product" placeholder="e.g. personalized wooden cutting board, funny cat tote bag…" onkeydown="if(event.key==='Enter')runAI('listings')">
+          <button class="ai-btn" style="background:#2EC4B6;" onclick="runAI('listings')">Generate Listing →</button>
+        </div>
+        <div class="result-box" id="result-listings"></div>
+      </div>
+
+      <!-- KEYWORDS PANEL -->
+      <div class="panel" id="panel-keywords">
+        <h3 class="panel-title">⌖ Keyword Research</h3>
+        <p class="panel-desc">Find exactly what buyers type into Etsy. High-volume, low-competition keywords.</p>
+        <div class="chip-row">
+          <button class="chip active" id="kw-discover" style="background:#4CC9F0;color:#0d0d0d;" onclick="setKwMode('discover')">🔍 Discover</button>
+          <button class="chip" id="kw-gaps" onclick="setKwMode('gaps')">🎯 Find Gaps</button>
+          <button class="chip" id="kw-tags" onclick="setKwMode('tags')">🏷 Generate 13 Tags</button>
+        </div>
+        <div class="input-row">
+          <input class="ai-input" id="keywords-seed" placeholder="e.g. cottagecore wall art, personalized dog collar…" onkeydown="if(event.key==='Enter')runAI('keywords')">
+          <button class="ai-btn" style="background:#4CC9F0;" onclick="runAI('keywords')">Research →</button>
+        </div>
+        <div class="result-box" id="result-keywords"></div>
+      </div>
+
+      <!-- MARKETING PANEL -->
+      <div class="panel" id="panel-marketing">
+        <h3 class="panel-title">◆ Marketing Engine</h3>
+        <p class="panel-desc">2-week content plan with captions, hashtags, and posting strategy for your niche.</p>
+        <div class="chip-row" id="platform-chips">
+          <button class="chip active" style="background:#E76F51;color:#0d0d0d;" onclick="setPlatform(this,'Pinterest')">Pinterest</button>
+          <button class="chip" onclick="setPlatform(this,'Instagram')">Instagram</button>
+          <button class="chip" onclick="setPlatform(this,'TikTok')">TikTok</button>
+          <button class="chip" onclick="setPlatform(this,'Facebook')">Facebook</button>
+        </div>
+        <div class="input-row">
+          <input class="ai-input" id="marketing-cat" placeholder="e.g. handmade candles, vintage jewelry, baby shower gifts…" onkeydown="if(event.key==='Enter')runAI('marketing')">
+          <button class="ai-btn" style="background:#E76F51;" onclick="runAI('marketing')">Create Plan →</button>
+        </div>
+        <div class="result-box" id="result-marketing"></div>
+      </div>
+
+      <!-- EMAIL PANEL -->
+      <div class="panel" id="panel-email">
+        <h3 class="panel-title">✉ Email Sequence Builder</h3>
+        <p class="panel-desc">Complete email flows that turn browsers into buyers. Load into Mailchimp or Klaviyo.</p>
+        <div class="form-grid">
+          <div><label class="form-label">SHOP NAME (optional)</label><input class="ai-input fullw" id="email-shop" placeholder="e.g. ForwardMadeStudio"></div>
+          <div><label class="form-label">YOUR NICHE</label><input class="ai-input fullw" id="email-niche" placeholder="e.g. personalized jewelry, home decor"></div>
+        </div>
+        <label class="form-label">SELECT SEQUENCE TYPE</label>
+        <button class="seq-btn active" id="seq-welcome" onclick="setSeq('welcome',this)"><span class="seq-name">Welcome Series</span><span class="seq-desc">New subscriber → buyer (5 emails)</span></button>
+        <button class="seq-btn" id="seq-abandoned" onclick="setSeq('abandoned',this)"><span class="seq-name">Abandoned Browse</span><span class="seq-desc">Viewed but didn't buy (3 emails)</span></button>
+        <button class="seq-btn" id="seq-post" onclick="setSeq('post',this)"><span class="seq-name">Post-Purchase</span><span class="seq-desc">Turn buyers into repeat customers (3 emails)</span></button>
+        <button class="seq-btn" id="seq-seasonal" onclick="setSeq('seasonal',this)"><span class="seq-name">Seasonal Campaign</span><span class="seq-desc">Holiday push (4 emails)</span></button>
+        <button class="seq-btn" id="seq-review" onclick="setSeq('review',this)"><span class="seq-name">Review Booster</span><span class="seq-desc">Get more 5-star reviews (2 emails)</span></button>
+        <br>
+        <button class="ai-btn" style="background:#F72585;color:#fff;" onclick="runAI('email')">Generate Sequence →</button>
+        <div class="result-box" id="result-email"></div>
+      </div>
+
+      <!-- FULFILLMENT PANEL -->
+      <div class="panel" id="panel-fulfillment">
+        <h3 class="panel-title">◎ Fulfillment Messages</h3>
+        <p class="panel-desc">Every customer message you'll ever need. Copy, paste, send.</p>
+        <input class="ai-input fullw mb12" id="fulfillment-shop" placeholder="Your shop name (optional)">
+        <div class="chip-row">
+          <button class="chip active" id="sc-order" style="background:#A8DADC;color:#0d0d0d;" onclick="setSc('order',this)">Order Confirm</button>
+          <button class="chip" id="sc-shipping" onclick="setSc('shipping',this)">Shipping</button>
+          <button class="chip" id="sc-review" onclick="setSc('review_req',this)">Review Ask</button>
+          <button class="chip" id="sc-bad" onclick="setSc('bad_review',this)">Bad Review</button>
+          <button class="chip" id="sc-custom" onclick="setSc('custom',this)">Custom Issue</button>
+        </div>
+        <button class="ai-btn" style="background:#A8DADC;" onclick="runAI('fulfillment')">Generate Message →</button>
+        <div class="result-box" id="result-fulfillment"></div>
+      </div>
+
+      <!-- ADS PANEL -->
+      <div class="panel" id="panel-ads">
+        <h3 class="panel-title">◑ Etsy Ads Calculator</h3>
+        <p class="panel-desc">Model your ad spend vs revenue. Find the budget needed to hit $5K/week.</p>
+        <div class="form-grid">
+          <div><label class="form-label">DAILY BUDGET ($)</label><input class="ai-input fullw" type="number" id="ads-budget" value="5" oninput="calcAds()"></div>
+          <div><label class="form-label">AVG CPC ($)</label><input class="ai-input fullw" type="number" id="ads-cpc" value="0.35" oninput="calcAds()"></div>
+          <div><label class="form-label">CONV RATE (%)</label><input class="ai-input fullw" type="number" id="ads-conv" value="3" oninput="calcAds()"></div>
+          <div><label class="form-label">AVG ORDER ($)</label><input class="ai-input fullw" type="number" id="ads-aov" value="35" oninput="calcAds()"></div>
+        </div>
+        <div class="stat-grid" id="ads-stats"></div>
+        <button class="ai-btn" style="background:#FF6B9D;" onclick="runAI('ads')">Get AI Ad Strategy →</button>
+        <div class="result-box" id="result-ads"></div>
+      </div>
+
+      <!-- PROFIT PANEL -->
+      <div class="panel" id="panel-profit">
+        <h3 class="panel-title">⬡ Profit Tracker</h3>
+        <p class="panel-desc">Real margin math after all Etsy fees (6.5% + 3% + $0.20). See true profit.</p>
+        <div class="stat-grid" id="profit-stats"></div>
+        <div class="table-wrap">
+          <table id="profit-table">
+            <thead><tr><th>PRODUCT</th><th>PRICE</th><th>COST</th><th>SALES/WK</th><th>ADS $</th><th>MARGIN</th><th>PROFIT/WK</th><th></th></tr></thead>
+            <tbody id="profit-tbody"></tbody>
+          </table>
+        </div>
+        <div class="btn-row">
+          <button class="ai-btn" style="background:rgba(255,255,255,0.07);color:#ccc;font-size:12px;padding:9px 14px;" onclick="addRow()">+ Add Product</button>
+          <button class="ai-btn" style="background:#06D6A0;" onclick="runAI('profit')">Optimize with AI →</button>
+        </div>
+        <div class="result-box" id="result-profit"></div>
+      </div>
+
+      <!-- COMPETITOR PANEL -->
+      <div class="panel" id="panel-competitor">
+        <h3 class="panel-title">◭ Competitor Analyzer</h3>
+        <p class="panel-desc">Paste a listing URL or shop name. AI finds their weaknesses and how to beat them.</p>
+        <div class="chip-row">
+          <button class="chip active" id="comp-listing" style="background:#BD93F9;color:#0d0d0d;" onclick="setComp('listing',this)">Analyze Listing</button>
+          <button class="chip" id="comp-shop" onclick="setComp('shop',this)">Analyze Shop</button>
+        </div>
+        <input class="ai-input fullw mb12" id="comp-url" placeholder="Etsy listing URL or competitor shop name…">
+        <textarea class="ai-input mb12" id="comp-notes" placeholder="Additional notes: price, sales count, reviews…" style="height:70px;resize:vertical;"></textarea>
+        <button class="ai-btn" style="background:#BD93F9;" onclick="runAI('competitor')">Run Analysis →</button>
+        <div class="result-box" id="result-competitor"></div>
+      </div>
+
+      <!-- SEASONAL PANEL -->
+      <div class="panel" id="panel-seasonal">
+        <h3 class="panel-title">❋ Seasonal Trend Calendar</h3>
+        <p class="panel-desc">Prepare 6 weeks early and capture 3x more seasonal sales.</p>
+        <div class="month-grid" id="month-grid"></div>
+        <div class="card mb12" id="month-info" style="border-color:rgba(255,154,60,0.2);"></div>
+        <div class="input-row">
+          <input class="ai-input" id="seasonal-niche" placeholder="Your niche (optional): e.g. candles, personalized gifts…">
+          <button class="ai-btn" style="background:#FF9A3C;" onclick="runAI('seasonal')">Get Plan →</button>
+        </div>
+        <div class="result-box" id="result-seasonal"></div>
+      </div>
+
+      <!-- SCALE PANEL -->
+      <div class="panel" id="panel-scale">
+        <h3 class="panel-title">▲ Scale Advisor</h3>
+        <p class="panel-desc">Tell AI where you're at and get a laser-focused strategy to reach $5K/week.</p>
+        <textarea class="ai-input mb12" id="scale-data" placeholder="Describe your situation: weekly sales, listings, what's working, challenges…"></textarea>
+        <button class="ai-btn" style="background:#FFD166;" onclick="runAI('scale')">Get Scale Strategy →</button>
+        <div class="result-box" id="result-scale"></div>
+      </div>
+
+      <!-- ROADMAP PANEL -->
+      <div class="panel" id="panel-roadmap">
+        <h3 class="panel-title">◐ $5K/Week Roadmap</h3>
+        <p class="panel-desc">Your 12-week path from $0 to $5,000/week.</p>
+        <div id="roadmap-items"></div>
+        <div class="card" style="margin-top:20px;background:linear-gradient(135deg,rgba(196,125,255,0.07),rgba(244,162,97,0.07));border-color:rgba(196,125,255,0.15);">
+          <div style="font-family:'DM Serif Display',serif;font-size:16px;color:#fff;margin-bottom:8px;">⚡ The Core Formula</div>
+          <div style="font-size:12px;color:#ccc;line-height:2.2;">
+            <span style="color:#F4A261;">10 listings</span> × $40 avg × <span style="color:#2EC4B6;">3 sales/day</span> = <span style="color:#FFD166;">$1,200/day → $8,400/week</span>
+            <div style="color:#555;font-size:11px;margin-top:4px;">You only need 3–5 winners converting once/day to hit $5K/wk.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div id="footer">
+    <span class="footer-step">⚡ Start: Launch</span>
+    <span class="footer-step">① Source</span>
+    <span class="footer-step">② Keywords</span>
+    <span class="footer-step">③ List</span>
+    <span class="footer-step">④ Market</span>
+    <span class="footer-step">⑤ Email</span>
+    <span class="footer-step">⑥ Fulfill</span>
+    <span class="footer-step">⑦ Ads</span>
+    <span class="footer-step">⑧ Profit</span>
+    <span class="footer-step">⑨ Spy</span>
+    <span class="footer-step">⑩ Seasonal</span>
+    <span class="footer-step">⑪ Scale</span>
+    <span class="footer-step">⑫ $5K</span>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const API_KEY = ''; // Set via environment or prompt
+let kwMode = 'discover';
+let platform = 'Pinterest';
+let seqType = 'welcome';
+let scType = 'order';
+let compMode = 'listing';
+let selectedMonth = new Date().getMonth();
+let sidebarOpen = true;
+let products = [
+  {id:1,name:'Personalized Mug',price:'28',cost:'8',sales:'12',ads:'15'},
+  {id:2,name:'Custom Tote',price:'22',cost:'6',sales:'8',ads:'8'}
+];
+let nextId = 3;
+
+const MONTHS = [
+  {name:'January',icon:'❄️',events:'New Year, Winter clearance',niches:'organization, planners, self-care'},
+  {name:'February',icon:'💝',events:"Valentine's Day",niches:'couples gifts, heart prints, jewelry'},
+  {name:'March',icon:'🍀',events:"St. Patrick's, Spring",niches:'green decor, spring wreaths'},
+  {name:'April',icon:'🐣',events:'Easter, Earth Day',niches:'Easter baskets, spring floral'},
+  {name:'May',icon:'🌸',events:"Mother's Day, Graduation",niches:'mom gifts, personalized jewelry'},
+  {name:'June',icon:'☀️',events:"Father's Day, Weddings",niches:'dad gifts, wedding favors'},
+  {name:'July',icon:'🎆',events:'4th of July, Summer',niches:'patriotic, beach, outdoor'},
+  {name:'August',icon:'🎒',events:'Back to School',niches:'teacher gifts, dorm decor'},
+  {name:'September',icon:'🍂',events:'Fall, Labor Day',niches:'fall decor, pumpkin, harvest'},
+  {name:'October',icon:'🎃',events:'Halloween, Fall Peak',niches:'Halloween prints, spooky decor'},
+  {name:'November',icon:'🦃',events:'Thanksgiving, Black Friday',niches:'thankful prints, gift bundles'},
+  {name:'December',icon:'🎄',events:'Christmas, Hanukkah, NYE',niches:'ornaments, stockings, holiday cards'},
+];
+
+const CHECKLIST = [
+  {group:'🚀 STEP 1 — DEPLOY THIS APP',items:[
+    {id:'d1',text:'Get Anthropic API key at console.anthropic.com → add $5 credit',link:'https://console.anthropic.com',cost:'$5'},
+    {id:'d2',text:'Create GitHub account at github.com (free)',link:'https://github.com',cost:'Free'},
+    {id:'d3',text:'Upload EtsyFlow files to GitHub repository',cost:'Free'},
+    {id:'d4',text:'Sign up at vercel.com with GitHub → import etsyflow repo',link:'https://vercel.com',cost:'Free'},
+    {id:'d5',text:'Add ANTHROPIC_API_KEY environment variable in Vercel settings',cost:'Free'},
+    {id:'d6',text:'Deploy → your app goes live at yourname.vercel.app 🎉',cost:'Free'},
+  ]},
+  {group:'🏪 STEP 2 — ETSY SHOP',items:[
+    {id:'e1',text:'Create Etsy seller account at etsy.com/sell',link:'https://www.etsy.com/sell',cost:'Free'},
+    {id:'e2',text:'Shop name: ForwardMadeStudio → upload your logo',cost:'Free'},
+    {id:'e3',text:'Add shop announcement and about section',cost:'Free'},
+    {id:'e4',text:'Connect BofA business bank account for payouts',cost:'Free'},
+  ]},
+  {group:'🖨 STEP 3 — PRINTIFY SETUP',items:[
+    {id:'p1',text:'Create free Printify account at printify.com',link:'https://printify.com',cost:'Free'},
+    {id:'p2',text:'Connect Printify to your Etsy shop in Settings → Integrations',cost:'Free'},
+    {id:'p3',text:'Set up your 7 POD products (mugs, totes, hoodies, etc.)',cost:'Free'},
+  ]},
+  {group:'📦 STEP 4 — FIRST 10 LISTINGS',items:[
+    {id:'l1',text:'Use ◈ Product Sourcing to confirm your 10 products',cost:'This app'},
+    {id:'l2',text:'Use ⌖ Keyword Research to get tags for each product',cost:'This app'},
+    {id:'l3',text:'Use ◉ Listing Generator to write all 10 listings',cost:'This app'},
+    {id:'l4',text:'Upload mockup photos from Printify + Canva (5-10 per listing)',cost:'Free'},
+    {id:'l5',text:'Publish all 10 listings on Etsy ($0.20 each)',cost:'$2 total'},
+  ]},
+  {group:'🚀 STEP 5 — LAUNCH',items:[
+    {id:'g1',text:'Enable Etsy Ads at $3/day',cost:'$3/day'},
+    {id:'g2',text:'Post first 5 Pinterest pins with listing links',cost:'Free'},
+    {id:'g3',text:'Set up Mailchimp free account + load welcome email sequence',link:'https://mailchimp.com',cost:'Free'},
+    {id:'g4',text:'Check Etsy Stats every morning → paste numbers into Scale Advisor weekly',cost:'This app'},
+  ]},
+];
+
+const ROADMAP = [
+  {week:'Week 1–2',goal:'$0 → $500',action:'Launch 10 listings, Etsy Ads $3/day, 5 Pinterest pins/day',status:'start',color:'#2EC4B6'},
+  {week:'Week 3–4',goal:'$500 → $1,200',action:'Find top 3 sellers, add variations, 10 more listings',status:'build',color:'#F4A261'},
+  {week:'Week 5–6',goal:'$1,200 → $2,500',action:'Scale ads on winners, build email list, add cross-sells',status:'grow',color:'#E76F51'},
+  {week:'Week 7–8',goal:'$2,500 → $4,000',action:'Seasonal products, automate reviews, expand 2nd niche',status:'scale',color:'#FFD166'},
+  {week:'Week 9–12',goal:'$4,000 → $5K+',action:'Full POD automation, VA for fulfillment, reinvest 20% into ads',status:'peak',color:'#C77DFF'},
+];
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  buildChecklist();
+  buildMonthGrid();
+  buildRoadmap();
+  initProfitTable();
+  calcAds();
+};
+
+// ── AI CALL ─────────────────────────────────────────────────────────────────
+async function callClaude(system, message) {
+  const key = localStorage.getItem('anthropic_key') || prompt('Enter your Anthropic API key (sk-ant-...):');
+  if (!key) return 'No API key provided.';
+  localStorage.setItem('anthropic_key', key);
+  
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+    body: JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system,messages:[{role:'user',content:message}]})
+  });
+  const data = await res.json();
+  if (data.error) return 'Error: ' + data.error.message;
+  return data.content?.[0]?.text || 'No response.';
+}
+
+function showLoading(id) {
+  const el = document.getElementById('result-'+id);
+  el.className = 'result-box visible';
+  el.innerHTML = '<div class="loading"><span class="spinner">⟳</span><span>AI is thinking…</span></div>';
+}
+
+function showResult(id, text) {
+  const el = document.getElementById('result-'+id);
+  el.className = 'result-box visible';
+  el.textContent = text;
+}
+
+// ── PANEL SWITCHING ──────────────────────────────────────────────────────────
+function switchPanel(btn) {
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.remove('active');
+    b.querySelector('.nav-icon').style.color = '#555';
+    b.querySelector('.nav-label').style.color = '#555';
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const color = btn.dataset.color;
+  btn.querySelector('.nav-icon').style.color = color;
+  const panel = document.getElementById('panel-' + btn.dataset.panel);
+  if (panel) panel.classList.add('active');
+  document.getElementById('current-icon').textContent = btn.querySelector('.nav-icon').textContent;
+  document.getElementById('current-label').textContent = btn.querySelector('.nav-label').textContent.toUpperCase();
+  document.getElementById('content').style.animation = 'none';
+  setTimeout(() => document.getElementById('content').style.animation = 'fadeUp 0.25s ease', 10);
+}
+
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  const sb = document.getElementById('sidebar');
+  sb.style.width = sidebarOpen ? '230px' : '54px';
+  sb.style.minWidth = sidebarOpen ? '230px' : '54px';
+  document.querySelectorAll('.nav-label,.nav-group-label,.nav-badge,#logo-title,#logo-sub,#status-text').forEach(el => {
+    el.style.display = sidebarOpen ? '' : 'none';
+  });
+  document.getElementById('collapse-btn').textContent = sidebarOpen ? '← Collapse' : '→';
+}
+
+// ── AI RUNNERS ───────────────────────────────────────────────────────────────
+async function runAI(module) {
+  showLoading(module);
+  let sys = '', msg = '';
+  
+  if (module === 'sourcing') {
+    const niche = document.getElementById('sourcing-niche').value;
+    sys = 'You are an expert Etsy product researcher. Find high-margin low-competition products. Clear numbered plain text.';
+    msg = `Find 8 winning Etsy product ideas in niche: "${niche}". For each: product name, why trending, price range $, competition (Low/Med/High), profit margin %, POD-compatible yes/no.`;
+  }
+  else if (module === 'listings') {
+    const product = document.getElementById('listings-product').value;
+    sys = 'You are an expert Etsy SEO copywriter. Write titles, tags and descriptions that rank and convert. Plain structured text.';
+    msg = `Complete Etsy listing for: "${product}". Include: 1)SEO title max 140 chars, 2)13 comma-separated tags, 3)Description 400-500 words with hook/bullets/CTA, 4)Price recommendation, 5)Category.`;
+  }
+  else if (module === 'keywords') {
+    const seed = document.getElementById('keywords-seed').value;
+    sys = 'You are an Etsy SEO expert. Find high-converting keywords. Be specific, use real Etsy search patterns, plain structured text.';
+    const prompts = {
+      discover: `Deep keyword research for Etsy: "${seed}". Return: 1)TOP 10 SEED KEYWORDS with monthly searches, competition Low/Med/High, buyer intent 1-10. 2)TOP 15 LONG-TAIL KEYWORDS. 3)TOP 5 TRENDING KEYWORDS. 4)KEYWORDS TO AVOID. 5)WINNING TITLE FORMULA example.`,
+      gaps: `Find underserved keyword gaps on Etsy for: "${seed}". Return: 1)10 UNDERSERVED KEYWORDS. 2)5 NICHE-DOWN KEYWORDS. 3)3 EMERGING TRENDS. 4)Single best keyword opportunity.`,
+      tags: `Generate perfect 13 Etsy tags for: "${seed}". Return: 13 OPTIMIZED TAGS comma-separated, REASONING for each, 5 BONUS TAGS.`
+    };
+    msg = prompts[kwMode];
+  }
+  else if (module === 'marketing') {
+    const cat = document.getElementById('marketing-cat').value;
+    sys = 'You are a social media expert driving Etsy traffic. Write content that converts. Plain structured text.';
+    msg = `2-week ${platform} plan for Etsy shop selling: "${cat}". Include: 10 post titles/captions, best times, 5 hashtag sets (10 each), viral hook idea, CTA strategy. Plus 1 email subject+preview for 40%+ open rate.`;
+  }
+  else if (module === 'email') {
+    const shop = document.getElementById('email-shop').value;
+    const niche = document.getElementById('email-niche').value || 'handmade gifts';
+    sys = 'You are an email marketing expert for Etsy sellers. Write emails that feel personal and drive repeat purchases. Plain structured text with clearly labeled emails.';
+    const prompts = {
+      welcome: `5-email welcome sequence for${shop?` "${shop}"`:''} selling ${niche}. Email 1 (Immediate): warm welcome. Email 2 (Day 2): brand story. Email 3 (Day 4): best sellers+social proof. Email 4 (Day 7): exclusive 10% off. Email 5 (Day 14): re-engagement. Each: SUBJECT LINE, PREVIEW TEXT, BODY 150-200 words, CTA.`,
+      abandoned: `3-email abandoned browse for${shop?` "${shop}"`:''} selling ${niche}. Email 1 (1hr): soft reminder. Email 2 (24hr): social proof+urgency. Email 3 (72hr): last chance+incentive. Each: subject, preview, 100-150 word body, CTA.`,
+      post: `3-email post-purchase for${shop?` "${shop}"`:''} selling ${niche}. Email 1: order excitement. Email 2: after delivery check-in+review nudge. Email 3 (2wks): repurchase offer. Each: subject, preview, 120-180 word body, CTA.`,
+      seasonal: `4-email holiday campaign for${shop?` "${shop}"`:''} selling ${niche}. Email 1 (6wks): preview. Email 2 (3wks): gift guide. Email 3 (2wks): last order dates. Email 4 (final wk): last chance. Each: subject, preview, 150-200 word body, CTA.`,
+      review: `2-email review booster for${shop?` "${shop}"`:''} selling ${niche}. Email 1 (3 days post-delivery): genuine check-in+soft review ask. Email 2 (7 days): friendly follow-up. Must feel human. Each: subject, preview, 100-150 word body.`
+    };
+    msg = prompts[seqType];
+  }
+  else if (module === 'fulfillment') {
+    const shop = document.getElementById('fulfillment-shop').value;
+    const labels = {order:'order confirmation thank-you',shipping:'shipping notification',review_req:'delivery confirmation + polite review request',bad_review:'response to 3-star negative review (empathetic, solution)',custom:'response to customer with custom order problem'};
+    sys = 'You are an Etsy customer service specialist. Write warm professional messages that build loyalty. Respond with message only.';
+    msg = `Write Etsy ${labels[scType]} message${shop?` for shop "${shop}"`:''}. Warm, human, include [ORDER #] [TRACKING #] [BUYER NAME] placeholders, under 150 words, memorable closing. Copy-paste ready.`;
+  }
+  else if (module === 'ads') {
+    const b=parseFloat(document.getElementById('ads-budget').value)||0;
+    const c=parseFloat(document.getElementById('ads-cpc').value)||0.01;
+    const cr=parseFloat(document.getElementById('ads-conv').value)||0;
+    const ao=parseFloat(document.getElementById('ads-aov').value)||0;
+    const rev=((b/c)*(cr/100)*ao).toFixed(2);
+    const roas=b>0?(rev/b).toFixed(2):0;
+    sys = 'You are an Etsy Ads expert. Give precise actionable advice. Plain structured text.';
+    msg = `My Etsy Ads: $${b}/day budget, $${c} CPC, ${cr}% conv rate, $${ao} AOV, ROAS ${roas}x, daily rev $${rev}. Tell me: 1)Is this ROAS good? 2)Which lever to pull first? 3)Keyword bidding strategy 4)Daily budget for $5K/wk 5)One advanced tactic most miss.`;
+  }
+  else if (module === 'profit') {
+    const summary = products.map(p=>{const c=calcProfit(p);return `${p.name}: $${p.price} price, $${p.cost} cost, ${p.sales}/wk, $${c.profit} profit, ${c.margin}% margin`;}).join('\n');
+    sys = 'You are a profit optimization expert for Etsy sellers. Plain structured text.';
+    msg = `Products:\n${summary}\n\nTell me: 1)Best/worst margins 2)Prices to raise 3)Costs to cut 4)Products to drop 5)Path to $5K/wk profit.`;
+  }
+  else if (module === 'competitor') {
+    const url = document.getElementById('comp-url').value;
+    const notes = document.getElementById('comp-notes').value;
+    sys = 'You are a ruthless Etsy competitive intelligence expert. Find weaknesses and opportunities. Plain structured text.';
+    msg = compMode==='listing'
+      ?`Competitor listing: "${url}" Notes: "${notes}". Analyze: 1)Keywords+gaps 2)Pricing opportunity 3)Photo weaknesses 4)Description gaps 5)Common review complaints 6)My winning angle 7)One thing to do TODAY to outrank them.`
+      :`Competitor shop "${url}". Notes: "${notes}". Teardown: 1)Strengths 2)Vulnerabilities 3)Keyword gaps 4)Pricing opportunity 5)Product gaps 6)30-day plan to steal market share 7)One thing to copy immediately.`;
+  }
+  else if (module === 'seasonal') {
+    const m = MONTHS[selectedMonth];
+    const niche = document.getElementById('seasonal-niche').value;
+    sys = 'You are an Etsy seasonal trend expert. Help sellers prepare 6-8 weeks in advance. Plain structured text.';
+    msg = `Seasonal action plan for ${m.name} on Etsy${niche?` for shop selling ${niche}`:''}.Events: ${m.events}. Include: 1)TIMELINE (weeks before events) 2)TOP 5 PRODUCT IDEAS with prices 3)KEYWORD STRATEGY 4)LISTING REFRESH 5)MARKETING CALENDAR 6)WHAT TO PREPARE NOW for next month 7)REVENUE OPPORTUNITY SCORE 1-10.`;
+  }
+  else if (module === 'scale') {
+    const data = document.getElementById('scale-data').value || 'New shop, 0 sales, home decor niche';
+    sys = 'You are a seasoned Etsy growth strategist. Give blunt data-driven actionable advice. No fluff.';
+    msg = `My shop: "${data}"\n\nGive: 1)3 IMMEDIATE ACTIONS this week 2)BIGGEST LEVER to pull 3)Products to add/drop 4)Ads strategy 5)Math to $5K/week in 90 days 6)One unconventional tactic. Be direct.`;
+  }
+  else if (module === 'launch') {
+    const situation = document.getElementById('launch-situation').value || 'brand new seller';
+    const done = document.querySelectorAll('.checklist-item.checked').length;
+    const total = document.querySelectorAll('.checklist-item').length;
+    sys = 'You are an Etsy launch coach. Be encouraging, specific, and practical. Plain text.';
+    msg = `I am launching my Etsy shop. Situation: "${situation}". Completed ${done}/${total} launch tasks.\n\nTell me: 1)Single most important next action RIGHT NOW 2)Fastest path to first sale 3)One thing to skip for now 4)Realistic timeline to first sale 5)One encouraging fact about where I am starting from. Be direct and warm.`;
+  }
+
+  try {
+    const result = await callClaude(sys, msg);
+    showResult(module, result);
+  } catch(e) {
+    showResult(module, 'Error: ' + e.message + '\n\nMake sure your API key is correct.');
+  }
+}
+
+async function runLaunch() { await runAI('launch'); }
+
+// ── CHECKLIST ────────────────────────────────────────────────────────────────
+let checks = {};
+function buildChecklist() {
+  const container = document.getElementById('checklist-container');
+  container.innerHTML = '';
+  CHECKLIST.forEach(group => {
+    const label = document.createElement('div');
+    label.className = 'group-label';
+    label.textContent = group.group;
+    container.appendChild(label);
+    group.items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'checklist-item' + (checks[item.id] ? ' checked' : '');
+      div.onclick = () => toggleCheck(item.id);
+      div.innerHTML = `
+        <div class="check-box">${checks[item.id]?'✓':''}</div>
+        <span class="check-text">${item.text}</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+          ${item.cost?`<span class="check-cost" style="color:${item.cost==='Free'?'#444':'#F4A261'}">${item.cost}</span>`:''}
+          ${item.link?`<a class="check-link" href="${item.link}" target="_blank" onclick="event.stopPropagation()">→ Open</a>`:''}
+        </div>`;
+      container.appendChild(div);
+    });
+  });
+  updateProgress();
+}
+
+function toggleCheck(id) {
+  checks[id] = !checks[id];
+  buildChecklist();
+}
+
+function updateProgress() {
+  const items = document.querySelectorAll('.checklist-item');
+  const done = document.querySelectorAll('.checklist-item.checked').length;
+  const pct = Math.round((done/items.length)*100);
+  const color = pct===100?'#06D6A0':pct>60?'#FFD166':pct>30?'#F4A261':'#FF6B9D';
+  document.getElementById('progress-bar').style.width = pct+'%';
+  document.getElementById('progress-bar').style.background = color;
+  document.getElementById('progress-text').textContent = `${done}/${items.length} · ${pct}%`;
+  document.getElementById('progress-text').style.color = color;
+}
+
+// ── MONTH GRID ───────────────────────────────────────────────────────────────
+function buildMonthGrid() {
+  const grid = document.getElementById('month-grid');
+  MONTHS.forEach((m,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'month-btn' + (i===selectedMonth?' active':'');
+    btn.innerHTML = `<div class="month-emoji">${m.icon}</div><div class="month-name">${m.name.slice(0,3).toUpperCase()}</div>`;
+    btn.onclick = () => { selectedMonth=i; buildMonthGrid(); updateMonthInfo(); };
+    grid.appendChild(btn);
+  });
+  updateMonthInfo();
+}
+
+function updateMonthInfo() {
+  const m = MONTHS[selectedMonth];
+  document.getElementById('month-info').innerHTML = `
+    <div style="color:#FF9A3C;font-family:'DM Serif Display',serif;font-size:15px;margin-bottom:8px;">${m.icon} ${m.name}</div>
+    <div style="color:#888;font-size:12px;margin-bottom:6px;">Events: <span style="color:#ccc;">${m.events}</span></div>
+    <div style="color:#888;font-size:12px;">Hot niches: <span style="color:#ccc;">${m.niches}</span></div>`;
+}
+
+// ── ROADMAP ──────────────────────────────────────────────────────────────────
+function buildRoadmap() {
+  const container = document.getElementById('roadmap-items');
+  ROADMAP.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'roadmap-item';
+    div.style.borderLeft = `3px solid ${r.color}`;
+    div.innerHTML = `
+      <div><div class="roadmap-badge" style="background:${r.color};">${r.status.toUpperCase()}</div></div>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+          <span class="roadmap-week">${r.week}</span>
+          <span class="roadmap-goal" style="color:${r.color};">${r.goal}</span>
+        </div>
+        <div class="roadmap-action">${r.action}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+
+// ── PROFIT TABLE ─────────────────────────────────────────────────────────────
+function calcProfit(p) {
+  const pr=parseFloat(p.price)||0,co=parseFloat(p.cost)||0,sa=parseInt(p.sales)||0,ad=parseFloat(p.ads)||0;
+  const fees=pr*0.095+0.20,net=pr-co-fees,profit=(net*sa)-ad;
+  return {net:net.toFixed(2),profit:profit.toFixed(2),margin:pr>0?((net/pr)*100).toFixed(0):0};
+}
+
+function initProfitTable() { renderProfitTable(); }
+
+function renderProfitTable() {
+  const tbody = document.getElementById('profit-tbody');
+  tbody.innerHTML = '';
+  let twp=0,twr=0;
+  products.forEach(p => {
+    const c=calcProfit(p);
+    twp+=parseFloat(c.profit);
+    twr+=(parseFloat(p.price)||0)*(parseInt(p.sales)||0);
+    const tr=document.createElement('tr');
+    const mc=c.margin>40?'#06D6A0':c.margin>20?'#FFD166':'#FF6B9D';
+    const pc=parseFloat(c.profit)>0?'#06D6A0':'#FF6B9D';
+    tr.innerHTML=`
+      <td><input class="tbl-name" value="${p.name}" onchange="updateProduct(${p.id},'name',this.value)"></td>
+      ${['price','cost','sales','ads'].map(f=>`<td><input class="tbl-input" type="number" value="${p[f]}" onchange="updateProduct(${p.id},'${f}',this.value)"></td>`).join('')}
+      <td style="color:${mc};">${c.margin}%</td>
+      <td style="color:${pc};font-weight:700;">$${c.profit}</td>
+      <td><button onclick="removeRow(${p.id})" style="background:none;border:none;color:#444;cursor:pointer;font-size:14px;">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+  const sg=document.getElementById('profit-stats');
+  const g=twp>0?'#06D6A0':'#FF6B9D';
+  sg.innerHTML=`
+    <div class="stat-card" style="background:#2EC4B610;border:1px solid #2EC4B630;"><div class="stat-label" style="color:#777;">WEEKLY REVENUE</div><div class="stat-value" style="color:#2EC4B6;">$${twr.toFixed(0)}</div><div class="stat-sub">gross</div></div>
+    <div class="stat-card" style="background:${g}10;border:1px solid ${g}30;"><div class="stat-label" style="color:#777;">WEEKLY PROFIT</div><div class="stat-value" style="color:${g};">$${twp.toFixed(0)}</div><div class="stat-sub">after fees</div></div>
+    <div class="stat-card" style="background:#FFD16610;border:1px solid #FFD16630;"><div class="stat-label" style="color:#777;">GAP TO $5K</div><div class="stat-value" style="color:#FFD166;">$${Math.max(0,5000-twp).toFixed(0)}</div><div class="stat-sub">profit gap</div></div>`;
+}
+
+function updateProduct(id,field,val){products=products.map(p=>p.id===id?{...p,[field]:val}:p);renderProfitTable();}
+function addRow(){products.push({id:nextId++,name:'New Product',price:'0',cost:'0',sales:'0',ads:'0'});renderProfitTable();}
+function removeRow(id){products=products.filter(p=>p.id!==id);renderProfitTable();}
+
+// ── ADS CALC ─────────────────────────────────────────────────────────────────
+function calcAds() {
+  const b=parseFloat(document.getElementById('ads-budget').value)||0;
+  const c=parseFloat(document.getElementById('ads-cpc').value)||0.01;
+  const cr=parseFloat(document.getElementById('ads-conv').value)||0;
+  const ao=parseFloat(document.getElementById('ads-aov').value)||0;
+  const clicks=(b/c).toFixed(0),sales=((clicks*cr)/100).toFixed(1),rev=(sales*ao).toFixed(2),roas=b>0?(rev/b).toFixed(2):0;
+  const rc=roas>=3?'#06D6A0':roas>=2?'#FFD166':'#FF6B9D';
+  document.getElementById('ads-stats').innerHTML=`
+    <div class="stat-card" style="background:#FF6B9D10;border:1px solid #FF6B9D30;"><div class="stat-label" style="color:#777;">DAILY CLICKS</div><div class="stat-value" style="color:#FF6B9D;">${clicks}</div><div class="stat-sub">estimated</div></div>
+    <div class="stat-card" style="background:#F4A26110;border:1px solid #F4A26130;"><div class="stat-label" style="color:#777;">DAILY SALES</div><div class="stat-value" style="color:#F4A261;">${sales}</div><div class="stat-sub">orders</div></div>
+    <div class="stat-card" style="background:#2EC4B610;border:1px solid #2EC4B630;"><div class="stat-label" style="color:#777;">WEEKLY REV</div><div class="stat-value" style="color:#2EC4B6;">$${(rev*7).toFixed(0)}</div><div class="stat-sub">from ads</div></div>
+    <div class="stat-card" style="background:${rc}10;border:1px solid ${rc}30;"><div class="stat-label" style="color:#777;">ROAS</div><div class="stat-value" style="color:${rc};">${roas}x</div><div class="stat-sub">return</div></div>`;
+}
+
+// ── CHIP SETTERS ─────────────────────────────────────────────────────────────
+function setKwMode(mode) {
+  kwMode=mode;
+  ['discover','gaps','tags'].forEach(m=>{
+    const el=document.getElementById('kw-'+m);
+    if(m===mode){el.classList.add('active');el.style.background='#4CC9F0';el.style.color='#0d0d0d';}
+    else{el.classList.remove('active');el.style.background='transparent';el.style.color='#aaa';}
+  });
+}
+
+function setPlatform(btn,p) {
+  platform=p;
+  document.querySelectorAll('#platform-chips .chip').forEach(c=>{c.classList.remove('active');c.style.background='transparent';c.style.color='#aaa';});
+  btn.classList.add('active');btn.style.background='#E76F51';btn.style.color='#0d0d0d';
+}
+
+function setSeq(type,btn) {
+  seqType=type;
+  document.querySelectorAll('.seq-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setSc(type,btn) {
+  scType=type;
+  document.querySelectorAll('.chip-row .chip').forEach(c=>{c.classList.remove('active');c.style.background='transparent';c.style.color='#aaa';});
+  btn.classList.add('active');btn.style.background='#A8DADC';btn.style.color='#0d0d0d';
+}
+
+function setComp(mode,btn) {
+  compMode=mode;
+  ['listing','shop'].forEach(m=>{
+    const el=document.getElementById('comp-'+m);
+    if(m===mode){el.classList.add('active');el.style.background='#BD93F9';el.style.color='#0d0d0d';}
+    else{el.classList.remove('active');el.style.background='transparent';el.style.color='#aaa';}
+  });
+  document.getElementById('comp-url').placeholder = mode==='listing'?'Etsy listing URL or describe the product…':'Competitor shop name…';
+}
+</script>
+</body>
+</html>
